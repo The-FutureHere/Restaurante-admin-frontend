@@ -7,9 +7,7 @@ import type {
   Usuario,
 } from "../types";
 
-const BASE =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:9000/api";
+const BASE = "https://restaurante-backend-vow0.onrender.com/api";
 
 export type AuthResponse = {
   token: string;
