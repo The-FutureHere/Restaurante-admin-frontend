@@ -9,7 +9,7 @@ import type {
 
 const BASE =
   import.meta.env.VITE_API_URL ||
-  "http://localhost:8080/api";
+  "http://localhost:9000/api";
 
 export type AuthResponse = {
   token: string;
