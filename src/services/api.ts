@@ -7,8 +7,8 @@ import type {
   Usuario,
 } from "../types";
 
-const BASE = "http://localhost:8080/api"
- // "https://restaurante-backend-vow0.onrender.com/api";
+const BASE = //"http://localhost:8080/api"
+  "https://restaurante-backend-vow0.onrender.com/api";
 
 export type AuthResponse = {
   token: string;
