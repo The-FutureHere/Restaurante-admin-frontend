@@ -7,7 +7,8 @@ import type {
   Usuario,
 } from "../types";
 
-const BASE = "https://restaurante-backend-vow0.onrender.com/api";
+const BASE = "http://localhost:8080/api"
+ // "https://restaurante-backend-vow0.onrender.com/api";
 
 export type AuthResponse = {
   token: string;
@@ -22,30 +23,62 @@ export type Chamado = {
   criado_em: string;
 };
 
+export type FaturamentoMes = {
+  mes: number;
+  nome: string;
+  faturamento: number;
+  pedidos: number;
+};
+
+export type DashboardAnual = {
+  ano: number;
+  faturamento_total: number;
+  ticket_medio: number;
+  total_pedidos: number;
+  melhor_mes: string | null;
+  faturamento_melhor_mes: number;
+  meses: FaturamentoMes[];
+};
+
 async function request<T>(
   path: string,
   init?: RequestInit
 ): Promise<T> {
-  const token = localStorage.getItem("auth_token");
+  const token =
+    localStorage.getItem(
+      "auth_token"
+    );
 
-  const response = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : {}),
-      ...init?.headers,
-    },
-  });
+  const response = await fetch(
+    `${BASE}${path}`,
+    {
+      ...init,
+      headers: {
+        "Content-Type":
+          "application/json",
+
+        ...(token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : {}),
+
+        ...init?.headers,
+      },
+    }
+  );
 
   if (response.status === 401) {
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("auth_user");
+    localStorage.removeItem(
+      "auth_token"
+    );
 
-    window.location.href = "/login";
+    localStorage.removeItem(
+      "auth_user"
+    );
+
+    window.location.href =
+      "/login";
 
     throw new Error(
       "Sua sessão expirou. Faça login novamente."
@@ -57,14 +90,22 @@ async function request<T>(
   }
 
   const contentType =
-    response.headers.get("content-type");
+    response.headers.get(
+      "content-type"
+    );
 
   let body: any = null;
 
-  if (contentType?.includes("application/json")) {
-    body = await response.json();
+  if (
+    contentType?.includes(
+      "application/json"
+    )
+  ) {
+    body =
+      await response.json();
   } else {
-    const text = await response.text();
+    const text =
+      await response.text();
 
     body = text
       ? {
@@ -89,34 +130,60 @@ export const api = {
     email: string,
     senha: string
   ) =>
-    request<AuthResponse>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({
-        email,
-        senha,
-      }),
-    }),
+    request<AuthResponse>(
+      "/auth/login",
+      {
+        method: "POST",
+
+        body: JSON.stringify({
+          email,
+          senha,
+        }),
+      }
+    ),
 
   me: () =>
-    request<Usuario>("/auth/me"),
+    request<Usuario>(
+      "/auth/me"
+    ),
 
-  dashboard: (periodo: string) =>
+  dashboard: (
+    periodo: string
+  ) =>
     request<any>(
       `/dashboard/resumo?periodo=${encodeURIComponent(
         periodo
       )}`
     ),
 
+  dashboardAnual: (
+    ano: number
+  ) =>
+    request<DashboardAnual>(
+      `/dashboard/anual?ano=${ano}`
+    ),
+
   categorias: () =>
-    request<Categoria[]>("/categorias"),
+    request<Categoria[]>(
+      "/categorias"
+    ),
 
   criarCategoria: (
-    categoria: Omit<Categoria, "id">
+    categoria: Omit<
+      Categoria,
+      "id"
+    >
   ) =>
-    request<Categoria>("/categorias", {
-      method: "POST",
-      body: JSON.stringify(categoria),
-    }),
+    request<Categoria>(
+      "/categorias",
+      {
+        method: "POST",
+
+        body: JSON.stringify(
+          categoria
+        ),
+      }
+    ),
 
   atualizarCategoria: (
     categoria: Categoria
@@ -125,25 +192,44 @@ export const api = {
       `/categorias/${categoria.id}`,
       {
         method: "PUT",
-        body: JSON.stringify(categoria),
+
+        body: JSON.stringify(
+          categoria
+        ),
       }
     ),
 
-  excluirCategoria: (id: string) =>
-    request<void>(`/categorias/${id}`, {
-      method: "DELETE",
-    }),
+  excluirCategoria: (
+    id: string
+  ) =>
+    request<void>(
+      `/categorias/${id}`,
+      {
+        method: "DELETE",
+      }
+    ),
 
   produtos: () =>
-    request<Produto[]>("/produtos"),
+    request<Produto[]>(
+      "/produtos"
+    ),
 
   criarProduto: (
-    produto: Omit<Produto, "id">
+    produto: Omit<
+      Produto,
+      "id"
+    >
   ) =>
-    request<Produto>("/produtos", {
-      method: "POST",
-      body: JSON.stringify(produto),
-    }),
+    request<Produto>(
+      "/produtos",
+      {
+        method: "POST",
+
+        body: JSON.stringify(
+          produto
+        ),
+      }
+    ),
 
   atualizarProduto: (
     produto: Produto
@@ -152,41 +238,81 @@ export const api = {
       `/produtos/${produto.id}`,
       {
         method: "PUT",
-        body: JSON.stringify(produto),
+
+        body: JSON.stringify(
+          produto
+        ),
       }
     ),
 
-  saveProduto: (produto: Produto) => {
-    const produtoNovo = !produto.id;
+  saveProduto: (
+    produto: Produto
+  ) => {
+    const produtoNovo =
+      !produto.id;
 
     if (produtoNovo) {
-      const {
-        id: _id,
-        ...produtoSemId
-      } = produto;
+      const produtoSemId: Omit<
+        Produto,
+        "id"
+      > = {
+        categoria_id:
+          produto.categoria_id,
 
-      return request<Produto>("/produtos", {
-        method: "POST",
-        body: JSON.stringify(produtoSemId),
-      });
+        nome:
+          produto.nome,
+
+        descricao:
+          produto.descricao,
+
+        preco:
+          produto.preco,
+
+        imagem_url:
+          produto.imagem_url,
+
+        disponivel:
+          produto.disponivel,
+      };
+
+      return request<Produto>(
+        "/produtos",
+        {
+          method: "POST",
+
+          body: JSON.stringify(
+            produtoSemId
+          ),
+        }
+      );
     }
 
     return request<Produto>(
       `/produtos/${produto.id}`,
       {
         method: "PUT",
-        body: JSON.stringify(produto),
+
+        body: JSON.stringify(
+          produto
+        ),
       }
     );
   },
 
-  deleteProduto: (id: string) =>
-    request<void>(`/produtos/${id}`, {
-      method: "DELETE",
-    }),
+  deleteProduto: (
+    id: string
+  ) =>
+    request<void>(
+      `/produtos/${id}`,
+      {
+        method: "DELETE",
+      }
+    ),
 
   pedidos: () =>
-    request<Pedido[]>("/pedidos"),
+    request<Pedido[]>(
+      "/pedidos"
+    ),
 
   statusPedido: (
     id: string,
@@ -196,6 +322,7 @@ export const api = {
       `/pedidos/${id}/status`,
       {
         method: "PATCH",
+
         body: JSON.stringify({
           status,
         }),
@@ -203,15 +330,26 @@ export const api = {
     ),
 
   funcionarios: () =>
-    request<Funcionario[]>("/funcionarios"),
+    request<Funcionario[]>(
+      "/funcionarios"
+    ),
 
   criarFuncionario: (
-    funcionario: Omit<Funcionario, "id">
+    funcionario: Omit<
+      Funcionario,
+      "id"
+    >
   ) =>
-    request<Funcionario>("/funcionarios", {
-      method: "POST",
-      body: JSON.stringify(funcionario),
-    }),
+    request<Funcionario>(
+      "/funcionarios",
+      {
+        method: "POST",
+
+        body: JSON.stringify(
+          funcionario
+        ),
+      }
+    ),
 
   atualizarFuncionario: (
     funcionario: Funcionario
@@ -220,17 +358,29 @@ export const api = {
       `/funcionarios/${funcionario.id}`,
       {
         method: "PUT",
-        body: JSON.stringify(funcionario),
+
+        body: JSON.stringify(
+          funcionario
+        ),
       }
     ),
 
-  excluirFuncionario: (id: string) =>
-    request<void>(`/funcionarios/${id}`, {
-      method: "DELETE",
-    }),
+  excluirFuncionario: (
+    id: string
+  ) =>
+    request<void>(
+      `/funcionarios/${id}`,
+      {
+        method: "DELETE",
+      }
+    ),
 
-  escalas: (semana: string) =>
-    request<EscalaSemanal[]>(
+  escalas: (
+    semana: string
+  ) =>
+    request<
+      EscalaSemanal[]
+    >(
       `/escalas?semana=${encodeURIComponent(
         semana
       )}`
@@ -239,9 +389,14 @@ export const api = {
   saveEscalas: (
     escalas: EscalaSemanal[]
   ) =>
-    request<EscalaSemanal[]>("/escalas", {
+    request<
+      EscalaSemanal[]
+    >("/escalas", {
       method: "PUT",
-      body: JSON.stringify(escalas),
+
+      body: JSON.stringify(
+        escalas
+      ),
     }),
 
   chamados: () =>
@@ -249,7 +404,9 @@ export const api = {
       "/chamados?status=ABERTO"
     ),
 
-  atender: (id: string) =>
+  atender: (
+    id: string
+  ) =>
     request<Chamado>(
       `/chamados/${id}/atender`,
       {
@@ -257,7 +414,9 @@ export const api = {
       }
     ),
 
-  fecharMesa: (numeroMesa: number) =>
+  fecharMesa: (
+    numeroMesa: number
+  ) =>
     request<void>(
       `/mesas/${numeroMesa}/fechar`,
       {
