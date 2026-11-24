@@ -7,8 +7,8 @@ import type {
   Usuario,
 } from "../types";
 
-const BASE = //"http://localhost:8080/api"
-  "https://restaurante-backend-vow0.onrender.com/api";
+const BASE: string =
+  import.meta.env.VITE_API_URL || "https://restaurante-backend-vow0.onrender.com/api";
 
 export type AuthResponse = {
   token: string;
@@ -40,78 +40,57 @@ export type DashboardAnual = {
   meses: FaturamentoMes[];
 };
 
-async function request<T>(
-  path: string,
-  init?: RequestInit
-): Promise<T> {
-  const token =
-    localStorage.getItem(
-      "auth_token"
-    );
+export type CadastroRestauranteRequest = {
+  nome_restaurante: string;
+  nome_responsavel: string;
+  email: string;
+  senha: string;
+  codigo_mestre: string;
+};
 
-  const response = await fetch(
-    `${BASE}${path}`,
-    {
-      ...init,
-      headers: {
-        "Content-Type":
-          "application/json",
+export type CadastroRestauranteResponse = {
+  restaurante_id: string;
+  nome: string;
+  slug: string;
+  email: string;
+  mensagem: string;
+};
 
-        ...(token
-          ? {
-              Authorization: `Bearer ${token}`,
-            }
-          : {}),
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = localStorage.getItem("auth_token");
 
-        ...init?.headers,
-      },
-    }
-  );
+  const response = await fetch(`${BASE}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
+  });
 
-  if (response.status === 401) {
-    localStorage.removeItem(
-      "auth_token"
-    );
+  if (response.status === 401 && token) {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_user");
 
-    localStorage.removeItem(
-      "auth_user"
-    );
+    window.location.href = "/login";
 
-    window.location.href =
-      "/login";
-
-    throw new Error(
-      "Sua sessão expirou. Faça login novamente."
-    );
+    throw new Error("Sua sessão expirou. Faça login novamente.");
   }
 
   if (response.status === 204) {
     return undefined as T;
   }
 
-  const contentType =
-    response.headers.get(
-      "content-type"
-    );
+  const contentType = response.headers.get("content-type");
 
   let body: any = null;
 
-  if (
-    contentType?.includes(
-      "application/json"
-    )
-  ) {
-    body =
-      await response.json();
+  if (contentType?.includes("application/json")) {
+    body = await response.json();
   } else {
-    const text =
-      await response.text();
+    const text = await response.text();
 
-    body = text
-      ? {
-          message: text,
-        }
-      : null;
+    body = text ? { message: text } : null;
   }
 
   if (!response.ok) {
@@ -126,301 +105,132 @@ async function request<T>(
 }
 
 export const api = {
-  login: (
-    email: string,
-    senha: string
-  ) =>
-    request<AuthResponse>(
-      "/auth/login",
-      {
-        method: "POST",
-
-        body: JSON.stringify({
-          email,
-          senha,
-        }),
-      }
-    ),
-
-  me: () =>
-    request<Usuario>(
-      "/auth/me"
-    ),
-
-  dashboard: (
-    periodo: string
-  ) =>
-    request<any>(
-      `/dashboard/resumo?periodo=${encodeURIComponent(
-        periodo
-      )}`
-    ),
-
-  dashboardAnual: (
-    ano: number
-  ) =>
-    request<DashboardAnual>(
-      `/dashboard/anual?ano=${ano}`
-    ),
-
-  categorias: () =>
-    request<Categoria[]>(
-      "/categorias"
-    ),
-
-  criarCategoria: (
-    categoria: Omit<
-      Categoria,
-      "id"
-    >
-  ) =>
-    request<Categoria>(
-      "/categorias",
-      {
-        method: "POST",
-
-        body: JSON.stringify(
-          categoria
-        ),
-      }
-    ),
-
-  atualizarCategoria: (
-    categoria: Categoria
-  ) =>
-    request<Categoria>(
-      `/categorias/${categoria.id}`,
-      {
-        method: "PUT",
-
-        body: JSON.stringify(
-          categoria
-        ),
-      }
-    ),
-
-  excluirCategoria: (
-    id: string
-  ) =>
-    request<void>(
-      `/categorias/${id}`,
-      {
-        method: "DELETE",
-      }
-    ),
-
-  produtos: () =>
-    request<Produto[]>(
-      "/produtos"
-    ),
-
-  criarProduto: (
-    produto: Omit<
-      Produto,
-      "id"
-    >
-  ) =>
-    request<Produto>(
-      "/produtos",
-      {
-        method: "POST",
-
-        body: JSON.stringify(
-          produto
-        ),
-      }
-    ),
-
-  atualizarProduto: (
-    produto: Produto
-  ) =>
-    request<Produto>(
-      `/produtos/${produto.id}`,
-      {
-        method: "PUT",
-
-        body: JSON.stringify(
-          produto
-        ),
-      }
-    ),
-
-  saveProduto: (
-    produto: Produto
-  ) => {
-    const produtoNovo =
-      !produto.id;
-
-    if (produtoNovo) {
-      const produtoSemId: Omit<
-        Produto,
-        "id"
-      > = {
-        categoria_id:
-          produto.categoria_id,
-
-        nome:
-          produto.nome,
-
-        descricao:
-          produto.descricao,
-
-        preco:
-          produto.preco,
-
-        imagem_url:
-          produto.imagem_url,
-
-        disponivel:
-          produto.disponivel,
-      };
-
-      return request<Produto>(
-        "/produtos",
-        {
-          method: "POST",
-
-          body: JSON.stringify(
-            produtoSemId
-          ),
-        }
-      );
-    }
-
-    return request<Produto>(
-      `/produtos/${produto.id}`,
-      {
-        method: "PUT",
-
-        body: JSON.stringify(
-          produto
-        ),
-      }
-    );
-  },
-
-  deleteProduto: (
-    id: string
-  ) =>
-    request<void>(
-      `/produtos/${id}`,
-      {
-        method: "DELETE",
-      }
-    ),
-
-  pedidos: () =>
-    request<Pedido[]>(
-      "/pedidos"
-    ),
-
-  statusPedido: (
-    id: string,
-    status: Pedido["status"]
-  ) =>
-    request<Pedido>(
-      `/pedidos/${id}/status`,
-      {
-        method: "PATCH",
-
-        body: JSON.stringify({
-          status,
-        }),
-      }
-    ),
-
-  funcionarios: () =>
-    request<Funcionario[]>(
-      "/funcionarios"
-    ),
-
-  criarFuncionario: (
-    funcionario: Omit<
-      Funcionario,
-      "id"
-    >
-  ) =>
-    request<Funcionario>(
-      "/funcionarios",
-      {
-        method: "POST",
-
-        body: JSON.stringify(
-          funcionario
-        ),
-      }
-    ),
-
-  atualizarFuncionario: (
-    funcionario: Funcionario
-  ) =>
-    request<Funcionario>(
-      `/funcionarios/${funcionario.id}`,
-      {
-        method: "PUT",
-
-        body: JSON.stringify(
-          funcionario
-        ),
-      }
-    ),
-
-  excluirFuncionario: (
-    id: string
-  ) =>
-    request<void>(
-      `/funcionarios/${id}`,
-      {
-        method: "DELETE",
-      }
-    ),
-
-  escalas: (
-    semana: string
-  ) =>
-    request<
-      EscalaSemanal[]
-    >(
-      `/escalas?semana=${encodeURIComponent(
-        semana
-      )}`
-    ),
-
-  saveEscalas: (
-    escalas: EscalaSemanal[]
-  ) =>
-    request<
-      EscalaSemanal[]
-    >("/escalas", {
-      method: "PUT",
-
-      body: JSON.stringify(
-        escalas
-      ),
+  login: (email: string, senha: string) =>
+    request<AuthResponse>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, senha }),
     }),
 
-  chamados: () =>
-    request<Chamado[]>(
-      "/chamados?status=ABERTO"
-    ),
+  me: () => request<Usuario>("/auth/me"),
 
-  atender: (
-    id: string
-  ) =>
-    request<Chamado>(
-      `/chamados/${id}/atender`,
-      {
-        method: "PATCH",
-      }
-    ),
+  cadastrarRestaurante: (dados: CadastroRestauranteRequest) =>
+    request<CadastroRestauranteResponse>("/public/restaurantes/cadastro", {
+      method: "POST",
+      body: JSON.stringify(dados),
+    }),
 
-  fecharMesa: (
-    numeroMesa: number
-  ) =>
-    request<void>(
-      `/mesas/${numeroMesa}/fechar`,
-      {
+  dashboard: (periodo: string) =>
+    request<any>(`/dashboard/resumo?periodo=${encodeURIComponent(periodo)}`),
+
+  dashboardAnual: (ano: number) =>
+    request<DashboardAnual>(`/dashboard/anual?ano=${ano}`),
+
+  categorias: () => request<Categoria[]>("/categorias"),
+
+  criarCategoria: (categoria: Omit<Categoria, "id">) =>
+    request<Categoria>("/categorias", {
+      method: "POST",
+      body: JSON.stringify(categoria),
+    }),
+
+  atualizarCategoria: (categoria: Categoria) =>
+    request<Categoria>(`/categorias/${categoria.id}`, {
+      method: "PUT",
+      body: JSON.stringify(categoria),
+    }),
+
+  excluirCategoria: (id: string) =>
+    request<void>(`/categorias/${id}`, {
+      method: "DELETE",
+    }),
+
+  produtos: () => request<Produto[]>("/produtos"),
+
+  criarProduto: (produto: Omit<Produto, "id">) =>
+    request<Produto>("/produtos", {
+      method: "POST",
+      body: JSON.stringify(produto),
+    }),
+
+  atualizarProduto: (produto: Produto) =>
+    request<Produto>(`/produtos/${produto.id}`, {
+      method: "PUT",
+      body: JSON.stringify(produto),
+    }),
+
+  saveProduto: (produto: Produto) => {
+    if (!produto.id) {
+      const produtoSemId: Omit<Produto, "id"> = {
+        categoria_id: produto.categoria_id,
+        nome: produto.nome,
+        descricao: produto.descricao,
+        preco: produto.preco,
+        imagem_url: produto.imagem_url,
+        disponivel: produto.disponivel,
+      };
+
+      return request<Produto>("/produtos", {
         method: "POST",
-      }
-    ),
+        body: JSON.stringify(produtoSemId),
+      });
+    }
+
+    return request<Produto>(`/produtos/${produto.id}`, {
+      method: "PUT",
+      body: JSON.stringify(produto),
+    });
+  },
+
+  deleteProduto: (id: string) =>
+    request<void>(`/produtos/${id}`, {
+      method: "DELETE",
+    }),
+
+  pedidos: () => request<Pedido[]>("/pedidos"),
+
+  statusPedido: (id: string, status: Pedido["status"]) =>
+    request<Pedido>(`/pedidos/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+
+  funcionarios: () => request<Funcionario[]>("/funcionarios"),
+
+  criarFuncionario: (funcionario: Omit<Funcionario, "id">) =>
+    request<Funcionario>("/funcionarios", {
+      method: "POST",
+      body: JSON.stringify(funcionario),
+    }),
+
+  atualizarFuncionario: (funcionario: Funcionario) =>
+    request<Funcionario>(`/funcionarios/${funcionario.id}`, {
+      method: "PUT",
+      body: JSON.stringify(funcionario),
+    }),
+
+  excluirFuncionario: (id: string) =>
+    request<void>(`/funcionarios/${id}`, {
+      method: "DELETE",
+    }),
+
+  escalas: (semana: string) =>
+    request<EscalaSemanal[]>(`/escalas?semana=${encodeURIComponent(semana)}`),
+
+  saveEscalas: (escalas: EscalaSemanal[]) =>
+    request<EscalaSemanal[]>("/escalas", {
+      method: "PUT",
+      body: JSON.stringify(escalas),
+    }),
+
+  chamados: () => request<Chamado[]>("/chamados?status=ABERTO"),
+
+  atender: (id: string) =>
+    request<Chamado>(`/chamados/${id}/atender`, {
+      method: "PATCH",
+    }),
+
+  fecharMesa: (numeroMesa: number) =>
+    request<void>(`/mesas/${numeroMesa}/fechar`, {
+      method: "POST",
+    }),
 };
