@@ -8,47 +8,24 @@ import {
   Settings2,
   Users,
 } from "lucide-react";
-
-import {
-  NavLink,
-  Outlet,
-  useNavigate,
-} from "react-router-dom";
-
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-
-const links = [
-  {
-    to: "/admin/dashboard",
-    label: "Dashboard",
-    icon: BarChart3,
-  },
-  {
-    to: "/admin/atendimento",
-    label: "Atendimento",
-    icon: BellRing,
-  },
-  {
-    to: "/admin/cardapio",
-    label: "Cardápio",
-    icon: Settings2,
-  },
-  {
-    to: "/admin/escala",
-    label: "Escala",
-    icon: Users,
-  },
-  {
-    to: "/admin/qrcodes",
-    label: "QR Codes",
-    icon: QrCode,
-  },
-];
+import { useRestaurante } from "../context/RestauranteContext";
 
 export default function AdminLayout() {
   const { user, logout } = useApp();
-
+  const restaurante = useRestaurante();
   const navigate = useNavigate();
+
+  const base = "/" + restaurante.slug + "/admin";
+
+  const links = [
+    { to: base + "/dashboard", label: "Dashboard", icon: BarChart3 },
+    { to: base + "/atendimento", label: "Atendimento", icon: BellRing },
+    { to: base + "/cardapio", label: "Cardápio", icon: Settings2 },
+    { to: base + "/escala", label: "Escala", icon: Users },
+    { to: base + "/qrcodes", label: "QR Codes", icon: QrCode },
+  ];
 
   function sair() {
     logout();
@@ -57,9 +34,7 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col bg-slate-950 p-5 text-white lg:flex">
-
         <div className="flex items-center gap-3 text-xl font-black">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand">
             <Flame size={20} />
@@ -69,12 +44,12 @@ export default function AdminLayout() {
         </div>
 
         <div className="mt-8 rounded-2xl bg-white/5 p-3">
-          <p className="font-bold">
-            {user?.nome}
-          </p>
+          <p className="font-bold">{user?.nome}</p>
 
-          <p className="mt-1 text-xs text-white/45">
-            Administrador
+          <p className="mt-1 text-xs text-white/45">Administrador</p>
+
+          <p className="mt-2 truncate border-t border-white/10 pt-2 text-xs font-bold text-white/70">
+            {restaurante.nome}
           </p>
         </div>
 
@@ -97,9 +72,7 @@ export default function AdminLayout() {
               >
                 <Icon size={19} />
 
-                <span>
-                  {item.label}
-                </span>
+                <span>{item.label}</span>
               </NavLink>
             );
           })}
@@ -108,16 +81,12 @@ export default function AdminLayout() {
         <div className="mt-auto space-y-2">
           <button
             type="button"
-            onClick={() =>
-              navigate("/cozinha")
-            }
+            onClick={() => navigate("/cozinha")}
             className="flex w-full items-center gap-3 rounded-xl bg-white/10 px-3 py-3 font-bold transition-colors hover:bg-white/15"
           >
             <ChefHat size={20} />
 
-            <span>
-              Abrir Tela da Cozinha
-            </span>
+            <span>Abrir Tela da Cozinha</span>
           </button>
 
           <button
@@ -130,33 +99,23 @@ export default function AdminLayout() {
             <span>Sair</span>
           </button>
         </div>
-
       </aside>
 
       <div className="lg:pl-64">
-
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-5 lg:hidden">
-
           <div className="flex items-center gap-2">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-white">
               <Flame size={18} />
             </span>
 
-            <strong>
-              BrasaOS
-            </strong>
+            <strong className="max-w-[9rem] truncate">{restaurante.nome}</strong>
           </div>
 
           <div className="flex items-center gap-2">
-
             <button
               type="button"
               title="Atendimento"
-              onClick={() =>
-                navigate(
-                  "/admin/atendimento"
-                )
-              }
+              onClick={() => navigate(base + "/atendimento")}
               className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-700"
             >
               <BellRing size={19} />
@@ -165,9 +124,7 @@ export default function AdminLayout() {
             <button
               type="button"
               title="Tela da Cozinha"
-              onClick={() =>
-                navigate("/cozinha")
-              }
+              onClick={() => navigate("/cozinha")}
               className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-700"
             >
               <ChefHat size={19} />
@@ -181,15 +138,11 @@ export default function AdminLayout() {
             >
               <LogOut size={19} />
             </button>
-
           </div>
-
         </header>
 
         <Outlet />
-
       </div>
-
     </div>
   );
 }

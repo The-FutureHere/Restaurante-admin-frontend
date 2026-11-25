@@ -40,6 +40,23 @@ export type DashboardAnual = {
   meses: FaturamentoMes[];
 };
 
+export type RestauranteAtual = {
+  id: string;
+  nome: string;
+  slug: string;
+  logo_url: string | null;
+  cor_primaria: string | null;
+  cor_destaque: string | null;
+  ativo: boolean;
+};
+
+export type MesasQuantidade = {
+  quantidade: number;
+};
+
+
+
+
 export type CadastroRestauranteRequest = {
   nome_restaurante: string;
   nome_responsavel: string;
@@ -233,4 +250,15 @@ export const api = {
     request<void>(`/mesas/${numeroMesa}/fechar`, {
       method: "POST",
     }),
+
+  restauranteAtual: () => request<RestauranteAtual>("/restaurante/atual"),
+
+  quantidadeMesas: () => request<MesasQuantidade>("/mesas/quantidade"),
+
+  definirQuantidadeMesas: (quantidade: number) =>
+    request<MesasQuantidade>("/mesas/quantidade", {
+      method: "PUT",
+      body: JSON.stringify({ quantidade }),
+    }),
+
 };
